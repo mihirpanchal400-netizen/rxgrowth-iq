@@ -18,10 +18,45 @@ data-use agreements that restrict where it may be stored, who may access it, and
 prohibit re-identification. It lives only inside a customer's own environment under their DUA
 — never in this repo, never in a fixture, never in a screenshot in an issue.
 
-**CI gate** (`.github/workflows/ci.yml`): a check scans added files for NPI-shaped 10-digit
-identifiers, DEA-number formats, and common vendor filename patterns, and fails the build on a
-hit. The generator emits `npi_synth` values in a deliberately invalid range so real and
-synthetic identifiers can never be confused.
+### The CI gate
+
+`.github/workflows/data-guard.yml` runs `scripts/check_no_real_data.py` on every pull request
+and every push to `main`. It scans the **diff**, not the working tree, so it stays fast and
+does not re-flag an allowlisted fixture on every subsequent PR.
+
+It fails the build on:
+
+| Detection | Rule |
+|---|---|
+| **Real-looking NPI** | 10 digits beginning with 1 or 2 that pass the CMS check digit (Luhn over `80840` + first nine digits) |
+| **Real-looking DEA number** | Two letters + seven digits satisfying the DEA checksum |
+| **Licensed vendor filename** | Path contains a known extract pattern — `xponent`, `plantrak`, `dddx`, `iqvia`, `komodo`, and similar |
+| **Bulk data file** | Added `.csv` / `.parquet` / `.xlsx` / `.sas7bdat` (and similar) over 512 KiB |
+
+Vendor patterns match on **file paths only, never on content** — otherwise this very document,
+which names those vendors in prose, would fail the build.
+
+Findings print a **masked** identifier (`123***93`). A scanner that echoed a real NPI into a
+public CI log would itself be the leak.
+
+### The synthetic NPI range — `9`-prefixed
+
+`packages/synth` emits `npi_synth` values that **begin with the digit 9**.
+
+CMS has only ever issued NPIs beginning with 1 or 2; 3 through 9 have never been allocated. A
+9-prefixed identifier is therefore structurally incapable of colliding with a real registrant,
+and the scanner treats the entire range as safe. A self-test iterates the range and asserts
+that no generated value can ever trip the gate — so the generator cannot be broken by a future
+change to the detection logic without CI noticing.
+
+This is preferred over relying on a failed check digit alone: check digits can pass by
+coincidence, whereas an unissued prefix cannot.
+
+### Allowlisting a fixture
+
+A reviewed synthetic fixture that trips a detection may carry the marker
+`rxiq:synthetic-data-ok` in the file. The exemption must be justified in the PR description.
+Reach for it rarely — a fixture that looks like real data usually is.
 
 ## 2. No PHI
 
