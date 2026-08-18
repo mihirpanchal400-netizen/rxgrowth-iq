@@ -1,0 +1,70 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# uv
+.uv/
+
+# Node
+node_modules/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+
+# Data — NEVER commit warehouse files or generated datasets
+*.duckdb
+*.duckdb.wal
+*.sqlite
+*.sqlite3
+*.db
+data/
+!data/.gitkeep
+*.parquet
+*.csv
+!tests/**/*.csv
+!apps/api/tests/fixtures/**/*.csv
+!packages/dbt/seeds/*.csv
+
+# ML
+mlruns/
+mlartifacts/
+*.pkl
+*.joblib
+*.onnx
+
+# dbt
+target/
+dbt_packages/
+logs/
+
+# Env & secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Playwright
+playwright-report/
+test-results/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
