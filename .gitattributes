@@ -1,0 +1,26 @@
+# Normalize line endings. Without this, every commit from a Windows checkout emits
+# "LF will be replaced by CRLF" warnings and diffs get noisy across platforms.
+* text=auto eol=lf
+
+# Windows-only files keep CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.parquet binary
+*.duckdb binary
+*.xlsx binary
+*.pkl binary
+*.joblib binary
+
+# Golden-dataset fixtures are hand-computed expected values. Diff them as text,
+# and never let a merge tool silently resolve them.
+apps/api/tests/fixtures/**/*.csv text eol=lf merge=binary

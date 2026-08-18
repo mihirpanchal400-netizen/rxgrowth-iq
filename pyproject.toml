@@ -1,0 +1,136 @@
+[project]
+name = "rxgrowth-iq"
+version = "0.1.0"
+description = "Pharmaceutical prescription growth intelligence platform"
+requires-python = ">=3.12"
+dependencies = [
+    "rxiq",
+    "rxsynth",
+]
+
+# Task runner. Replaces the Makefile in docs/BRIEF.md -- `make` is not available on the
+# target platform, and `uv run <task>` gives us the same ergonomics without a new dependency.
+[project.scripts]
+dev = "rxiq_tasks.cli:dev"
+api = "rxiq_tasks.cli:api"
+web = "rxiq_tasks.cli:web"
+lint = "rxiq_tasks.cli:lint"
+fmt = "rxiq_tasks.cli:fmt"
+typecheck = "rxiq_tasks.cli:typecheck"
+test = "rxiq_tasks.cli:test"
+guard = "rxiq_tasks.cli:guard"
+check = "rxiq_tasks.cli:check"
+
+[tool.uv.workspace]
+members = ["apps/api", "packages/synth"]
+
+[tool.uv.sources]
+rxiq = { workspace = true }
+rxsynth = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "pytest>=8",
+    "pytest-cov>=5",
+    "hypothesis>=6",
+    "httpx>=0.27",          # required by fastapi.testclient
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["tools/rxiq_tasks"]
+
+# ---------------------------------------------------------------------------
+# Lint / format
+# ---------------------------------------------------------------------------
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["apps/api/src", "packages/synth/src", "tools"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",    # pycodestyle
+    "F",         # pyflakes
+    "I",         # isort
+    "N",         # pep8-naming
+    "UP",        # pyupgrade
+    "B",         # bugbear
+    "C4",        # comprehensions
+    "SIM",       # simplify
+    "PTH",       # use pathlib
+    "RUF",
+    "ANN",       # annotations -- the metric engine must be fully typed
+    "D",         # docstrings
+]
+ignore = [
+    "D203",   # conflicts with D211
+    "D213",   # conflicts with D212
+    "ANN401", # Any in *args/**kwargs -- caught by mypy where it matters
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests document themselves through their names.
+"**/tests/**" = ["D100", "D101", "D102", "D103", "D104", "ANN201", "ANN001"]
+"scripts/*" = ["D103"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+# ---------------------------------------------------------------------------
+# Type checking
+# ---------------------------------------------------------------------------
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+warn_return_any = true
+show_error_codes = true
+files = ["apps/api/src", "packages/synth/src", "tools"]
+
+# CLAUDE.md: "No `Any` in core/." Enforced here rather than by review. The metric engine
+# is the auditable surface of this platform; an untyped value passing through it is a
+# defect regardless of whether it happens to work.
+[[tool.mypy.overrides]]
+module = "rxiq.core.*"
+disallow_any_explicit = true
+disallow_any_generics = true
+disallow_any_unimported = true
+
+# ---------------------------------------------------------------------------
+# Tests
+# ---------------------------------------------------------------------------
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["apps/api/tests", "packages/synth/tests"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "-ra",
+]
+markers = [
+    "integration: touches the warehouse or the API surface",
+    "golden: asserts against hand-computed expected values",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["apps/api/src/rxiq", "packages/synth/src/rxsynth"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
