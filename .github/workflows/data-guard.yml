@@ -1,0 +1,57 @@
+name: Data Guard
+
+# Blocks real prescriber or licensed vendor data from entering the repository.
+# See docs/compliance.md section 1.
+#
+# Deliberately a standalone workflow rather than a job inside ci.yml: this gate must be
+# the first thing that works and the last thing that breaks. It has no dependencies, no
+# setup steps, and nothing to install, so it cannot be taken down by an unrelated CI
+# failure. Phase 0 issue #3 builds ci.yml alongside it, not around it.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    name: Scan diff for real-data indicators
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out full history
+        uses: actions/checkout@v4
+        with:
+          # The scanner diffs against the base ref, so a shallow clone is not enough.
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Verify the scanner itself
+        # If the scanner is broken, a clean result means nothing.
+        run: python scripts/check_no_real_data.py --self-test
+
+      - name: Determine diff range
+        id: range
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "base=origin/${{ github.base_ref }}" >> "$GITHUB_OUTPUT"
+            echo "head=HEAD" >> "$GITHUB_OUTPUT"
+          else
+            echo "base=${{ github.event.before }}" >> "$GITHUB_OUTPUT"
+            echo "head=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Scan the diff
+        run: |
+          python scripts/check_no_real_data.py \
+            --base "${{ steps.range.outputs.base }}" \
+            --head "${{ steps.range.outputs.head }}"
