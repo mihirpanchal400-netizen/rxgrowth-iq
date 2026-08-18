@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+/* Charts and surfaces must read identically in both themes -- CLAUDE.md quality bar.
+   Tokens are defined once here so no component hardcodes a colour. */
+@theme {
+  --color-ink: #0f172a;
+  --color-muted: #64748b;
+  --color-surface: #ffffff;
+  --color-line: #e2e8f0;
+}
+
+:root {
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  @theme {
+    --color-ink: #f1f5f9;
+    --color-muted: #94a3b8;
+    --color-surface: #0b1120;
+    --color-line: #1e293b;
+  }
+}
+
+body {
+  background: var(--color-surface);
+  color: var(--color-ink);
+}

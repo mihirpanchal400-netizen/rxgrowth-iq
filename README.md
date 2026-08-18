@@ -40,13 +40,29 @@ Python 3.12 · FastAPI · Pydantic v2 · SQLAlchemy 2.0 · dbt-core · DuckDB ·
 
 ## Quickstart
 
+Requires Python 3.12+, Node 20+, and [uv](https://docs.astral.sh/uv/). No Docker —
+see [ADR 0001](docs/ADR/0001-architecture.md) decision 9.
+
 ```bash
-uv sync                 # install Python deps
-uv run seed             # generate the synthetic market (~90s)
-uv run dbt-build        # build warehouse models
-uv run api              # FastAPI on :8000
-npm --prefix apps/web run dev   # Next.js on :3000
+uv sync          # install the Python workspace
+uv run dev       # API on :8000, web on :3000 (installs web deps on first run)
 ```
+
+### Tasks
+
+`make` is replaced by `uv run <task>` — same ergonomics, no extra dependency.
+
+| Task | Does |
+|---|---|
+| `uv run dev` | API + web together |
+| `uv run api` / `uv run web` | One service, clean logs |
+| `uv run test` | pytest with coverage |
+| `uv run lint` / `uv run fmt` | ruff check / autofix |
+| `uv run typecheck` | mypy `--strict` + `tsc --noEmit` |
+| `uv run guard` | Scan the diff for real-data indicators |
+| `uv run check` | **Every gate CI runs.** Use before pushing. |
+
+`uv run seed` and `uv run dbt-build` arrive in Phase 1 with the synthetic generator.
 
 ## Documentation
 

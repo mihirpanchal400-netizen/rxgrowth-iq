@@ -29,7 +29,9 @@ out/
 *.sqlite
 *.sqlite3
 *.db
-data/
+# Must be data/* not data/ -- git does not descend into an excluded directory, so a
+# negation inside one can never match.
+data/*
 !data/.gitkeep
 *.parquet
 *.csv
